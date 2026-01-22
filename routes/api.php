@@ -130,6 +130,9 @@ Route::group([], function ($router) {
         //set download limit
         Route::post('/{id}/set-download-limit', [SharesController::class, 'setDownloadLimit'])->name('shares.setDownloadLimit');
 
+        //set or remove share password
+        Route::post('/{id}/set-password', [SharesController::class, 'setPassword'])->name('shares.setPassword');
+
         //prune expired shares
         Route::post('/prune-expired', [SharesController::class, 'pruneExpiredShares'])->name('shares.pruneExpired');
     });

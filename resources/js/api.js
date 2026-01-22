@@ -948,6 +948,24 @@ export const setDownloadLimit = async (id, amount) => {
   return data.data.share
 }
 
+export const setSharePassword = async (id, password, passwordConfirm = '') => {
+  const response = await fetchWithAuth(`${apiUrl}/api/shares/${id}/set-password`, {
+    method: 'POST',
+    headers: {
+      ...addJsonHeader()
+    },
+    body: JSON.stringify({
+      password: password,
+      password_confirm: passwordConfirm
+    })
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.message)
+  }
+  return data.data.share
+}
+
 export const pruneExpiredShares = async () => {
   const response = await fetchWithAuth(`${apiUrl}/api/shares/prune-expired`, {
     method: 'POST',

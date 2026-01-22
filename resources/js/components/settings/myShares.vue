@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, inject, defineExpose } from 'vue'
-import { getMyShares, expireShare, extendShare, setDownloadLimit, pruneExpiredShares } from '../../api'
+import { getMyShares, expireShare, extendShare, setDownloadLimit, pruneExpiredShares, setSharePassword } from '../../api'
 import {
   SquareArrowOutUpRight,
   CalendarPlus,
@@ -108,6 +108,43 @@ const handlePruneExpiredShares = async () => {
     loadShares()
   } catch (error) {
     toast.error(t.value('settings.error.pruneExpiredShares'))
+  }
+}
+
+const handleSetPasswordClick = async (share) => {
+  // Ask for password (simple prompt flow). Leave empty to remove password.
+  const password = prompt(t.value('settings.enter_new_password', 'Enter new password (leave empty to remove):'))
+  if (password === null) {
+    // cancelled
+    return
+  }
+
+  if (password === '') {
+    const confirmed = confirm(t.value('settings.confirm.remove_password', 'Remove password protection?'))
+    if (!confirmed) return
+    try {
+      await setSharePassword(share.id, '')
+      toast.success(t.value('settings.success.passwordRemoved', 'Password removed'))
+      loadShares()
+    } catch (err) {
+      toast.error(t.value('settings.error.passwordChange', 'Failed to change password'))
+    }
+    return
+  }
+
+  const passwordConfirm = prompt(t.value('settings.confirm_password', 'Confirm new password'))
+  if (passwordConfirm === null) return
+  if (password !== passwordConfirm) {
+    toast.error(t.value('settings.error.passwordMismatch', 'Passwords do not match'))
+    return
+  }
+
+  try {
+    await setSharePassword(share.id, password, passwordConfirm)
+    toast.success(t.value('settings.success.passwordSet', 'Password set'))
+    loadShares()
+  } catch (err) {
+    toast.error(t.value('settings.error.passwordChange', 'Failed to change password'))
   }
 }
 
@@ -254,6 +291,18 @@ defineExpose({
               :disabled="!enableDownloadButton(share)"
             >
               <HardDriveDownload style="margin-right: 0" />
+            </button>
+            <button
+              @click="handleSetPasswordClick(share)"
+              class="secondary"
+            >
+              <template v-if="share.password_protected">
+                <Lock />
+              </template>
+              <template v-else>
+                <LockOpen />
+              </template>
+              {{ $t('share.button.password', 'Password') }}
             </button>
           </td>
         </tr>

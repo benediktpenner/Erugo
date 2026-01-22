@@ -574,6 +574,66 @@ class SharesController extends Controller
     ]);
   }
 
+  public function setPassword($shareId, Request $request)
+  {
+    $user = Auth::user();
+    if (!$user) {
+      return response()->json([
+        'status' => 'error',
+        'message' => 'Unauthorized'
+      ], 401);
+    }
+
+    $share = Share::where('id', $shareId)->first();
+    if (!$share) {
+      return response()->json([
+        'status' => 'error',
+        'message' => 'Share not found'
+      ], 404);
+    }
+
+    if (!$this->canManageShare($share, $user)) {
+      return response()->json([
+        'status' => 'error',
+        'message' => 'Unauthorized'
+      ], 401);
+    }
+
+    $password = $request->password;
+    $passwordConfirm = $request->password_confirm;
+
+    // Remove password if empty string or explicitly null
+    if ($password === null || $password === '') {
+      $share->password = null;
+      $share->save();
+      return response()->json([
+        'status' => 'success',
+        'message' => 'Password removed',
+        'data' => [
+          'share' => $share
+        ]
+      ]);
+    }
+
+    if ($password !== $passwordConfirm) {
+      return response()->json([
+        'status' => 'error',
+        'message' => 'Password confirmation does not match'
+      ], 400);
+    }
+
+    $share->password = Hash::make($password);
+    $share->save();
+
+    return response()->json([
+      'status' => 'success',
+      'message' => 'Password set',
+      'data' => [
+        'share' => $share
+      ]
+    ]);
+  }
+
   public function pruneExpiredShares()
   {
     $user = Auth::user();
